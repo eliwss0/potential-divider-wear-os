@@ -56,21 +56,8 @@ class MyWatchFace : CanvasWatchFaceService() {
 
         private var mRegisteredTimeZoneReceiver = false
         private var mMuteMode: Boolean = false
-        private var mCenterX: Float = 0F
-        private var mCenterY: Float = 0F
 
-        private var mSecondHandLength: Float = 0F
-        private var sMinuteHandLength: Float = 0F
-        private var sHourHandLength: Float = 0F
-
-        /* Colors for all hands (hour, minute, seconds, ticks) based on photo loaded. */
-        private var mWatchHandColor: Int = 0
-        private var mWatchHandHighlightColor: Int = 0
-
-        private lateinit var mHourPaint: Paint
-        private lateinit var mMinutePaint: Paint
-        private lateinit var mSecondPaint: Paint
-        private lateinit var mDayPaint: Paint
+        private lateinit var mTextPaint: Paint
 
         private lateinit var mBackgroundPaint: Paint
         private lateinit var mBackgroundBitmap: Bitmap
@@ -108,50 +95,13 @@ class MyWatchFace : CanvasWatchFaceService() {
                 color = Color.BLACK
             }
             mBackgroundBitmap = BitmapFactory.decodeResource(resources, R.drawable.potential_divider_bg)
-
-            /* Extracts colors from background image to improve watchface style. */
-            Palette.from(mBackgroundBitmap).generate {
-                it?.let {
-                    mWatchHandHighlightColor = it.getVibrantColor(Color.RED)
-                    mWatchHandColor = it.getLightVibrantColor(Color.WHITE)
-                    updateWatchHandStyle()
-                }
-            }
         }
 
         private fun initializeWatchFace() {
             val scale = Resources.getSystem().displayMetrics.scaledDensity
 
-            /* Set defaults for colors */
-            mWatchHandColor = Color.WHITE
-            mWatchHandHighlightColor = Color.WHITE
-
-            mHourPaint = Paint().apply {
-                color = mWatchHandColor
-                textSize = scale*14F
-                textAlign = Paint.Align.CENTER
-                isAntiAlias = true
-                strokeCap = Paint.Cap.ROUND
-            }
-
-            mMinutePaint = Paint().apply {
-                color = mWatchHandColor
-                textSize = scale*14F
-                textAlign = Paint.Align.CENTER
-                isAntiAlias = true
-                strokeCap = Paint.Cap.ROUND
-            }
-
-            mSecondPaint = Paint().apply {
-                color = mWatchHandHighlightColor
-                textSize = scale*14F
-                textAlign = Paint.Align.CENTER
-                isAntiAlias = true
-                strokeCap = Paint.Cap.ROUND
-            }
-
-            mDayPaint = Paint().apply {
-                color = mWatchHandHighlightColor
+            mTextPaint = Paint().apply {
+                color = Color.WHITE
                 textSize = scale*14F
                 textAlign = Paint.Align.CENTER
                 isAntiAlias = true
@@ -190,25 +140,13 @@ class MyWatchFace : CanvasWatchFaceService() {
 
         private fun updateWatchHandStyle() {
             if (mAmbient) {
-                mHourPaint.color = Color.WHITE
-                mMinutePaint.color = Color.WHITE
-                mSecondPaint.color = Color.WHITE
-                mDayPaint.color = Color.WHITE
-
-                mHourPaint.typeface = Typeface.MONOSPACE
-
-                mHourPaint.isAntiAlias = false
-                mMinutePaint.isAntiAlias = false
-                mSecondPaint.isAntiAlias = false
-
+                mTextPaint.color = Color.GRAY
+                mTextPaint.typeface = Typeface.MONOSPACE
+                mTextPaint.isAntiAlias = false
             } else {
-                mHourPaint.color = mWatchHandColor
-                mMinutePaint.color = mWatchHandColor
-                mSecondPaint.color = mWatchHandHighlightColor
-
-                mHourPaint.isAntiAlias = true
-                mMinutePaint.isAntiAlias = true
-                mSecondPaint.isAntiAlias = true
+                mTextPaint.color = Color.WHITE
+                mTextPaint.typeface = Typeface.MONOSPACE
+                mTextPaint.isAntiAlias = true
             }
         }
 
@@ -219,9 +157,7 @@ class MyWatchFace : CanvasWatchFaceService() {
             /* Dim display in mute mode. */
             if (mMuteMode != inMuteMode) {
                 mMuteMode = inMuteMode
-                mHourPaint.alpha = if (inMuteMode) 100 else 255
-                mMinutePaint.alpha = if (inMuteMode) 100 else 255
-                mSecondPaint.alpha = if (inMuteMode) 80 else 255
+                mTextPaint.alpha = if (inMuteMode) 100 else 255
                 invalidate()
             }
         }
@@ -235,7 +171,6 @@ class MyWatchFace : CanvasWatchFaceService() {
             mBackgroundBitmap = Bitmap.createScaledBitmap(mBackgroundBitmap,
                     (mBackgroundBitmap.width * scale).toInt(),
                     (mBackgroundBitmap.height * scale).toInt(), true)
-
         }
 
         /**
@@ -282,17 +217,17 @@ class MyWatchFace : CanvasWatchFaceService() {
             val screenWidth = Resources.getSystem().displayMetrics.widthPixels
             val screenHeight = Resources.getSystem().displayMetrics.heightPixels
 
-            val seconds = mCalendar.get(Calendar.SECOND) + mCalendar.get(Calendar.MILLISECOND) / 1000f
+//            val seconds = mCalendar.get(Calendar.SECOND) + mCalendar.get(Calendar.MILLISECOND) / 1000f
             val minutes = mCalendar.get(Calendar.MINUTE).toString().padStart(2,'0')
             val hours = if(mCalendar.get(Calendar.HOUR)!=0) mCalendar.get(Calendar.HOUR).toString().padStart(2,'0') else "12"
             val day = mCalendar.get(Calendar.DAY_OF_MONTH).toString().padStart(2,'0')
             val vOut = minutes.toDouble()/(hours+minutes).toDouble()*day.toDouble()
 
             //Designed with absolute positioning on 320x320 screen, scaled based on device
-            canvas.drawText("$hours Ω", (screenWidth*155/320).toFloat(), (screenHeight*120/320).toFloat(),mHourPaint)
-            canvas.drawText("$minutes Ω", (screenWidth*155/320).toFloat(), (screenHeight*215/320).toFloat(),mMinutePaint)
-            canvas.drawText("$day V", (screenWidth*100/320).toFloat(), (screenHeight*162.5/320).toFloat(),mDayPaint)
-            canvas.drawText(String.format("%.2f",vOut)+" V", (screenWidth*240/320).toFloat(), (screenHeight*150/320).toFloat(),mDayPaint)
+            canvas.drawText("$hours Ω", (screenWidth*155/320).toFloat(), (screenHeight*120/320).toFloat(),mTextPaint)
+            canvas.drawText("$minutes Ω", (screenWidth*155/320).toFloat(), (screenHeight*215/320).toFloat(),mTextPaint)
+            canvas.drawText("$day V", (screenWidth*100/320).toFloat(), (screenHeight*162.5/320).toFloat(),mTextPaint)
+            canvas.drawText(String.format("%.2f",vOut)+" V", (screenWidth*240/320).toFloat(), (screenHeight*150/320).toFloat(),mTextPaint)
 
             //TODO Ambient?
         }
