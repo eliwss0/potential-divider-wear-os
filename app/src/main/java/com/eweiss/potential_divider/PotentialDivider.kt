@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Resources
 import android.graphics.*
+import android.graphics.drawable.AnimationDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
@@ -31,14 +32,14 @@ private const val INTERACTIVE_UPDATE_RATE_MS = 1000
  */
 private const val MSG_UPDATE_TIME = 0
 
-class MyWatchFace : CanvasWatchFaceService() {
+class PotentialDivider : CanvasWatchFaceService() {
 
     override fun onCreateEngine(): Engine {
         return Engine()
     }
 
-    private class EngineHandler(reference: MyWatchFace.Engine) : Handler() {
-        private val mWeakReference: WeakReference<MyWatchFace.Engine> = WeakReference(reference)
+    private class EngineHandler(reference: PotentialDivider.Engine) : Handler() {
+        private val mWeakReference: WeakReference<PotentialDivider.Engine> = WeakReference(reference)
 
         override fun handleMessage(msg: Message) {
             val engine = mWeakReference.get()
@@ -80,7 +81,7 @@ class MyWatchFace : CanvasWatchFaceService() {
         override fun onCreate(holder: SurfaceHolder) {
             super.onCreate(holder)
 
-            setWatchFaceStyle(WatchFaceStyle.Builder(this@MyWatchFace)
+            setWatchFaceStyle(WatchFaceStyle.Builder(this@PotentialDivider)
                     .setAcceptsTapEvents(true)
                     .build())
 
@@ -217,7 +218,7 @@ class MyWatchFace : CanvasWatchFaceService() {
             val screenWidth = Resources.getSystem().displayMetrics.widthPixels
             val screenHeight = Resources.getSystem().displayMetrics.heightPixels
 
-//            val seconds = mCalendar.get(Calendar.SECOND) + mCalendar.get(Calendar.MILLISECOND) / 1000f
+//            val seconds = mCalendar.get(Calendar.SECOND) + mCalendar.get(Calendar.MILLISECOND) / 1000f    2560 pixel perimeter
             val minutes = mCalendar.get(Calendar.MINUTE).toString().padStart(2,'0')
             val hours = if(mCalendar.get(Calendar.HOUR)!=0) mCalendar.get(Calendar.HOUR).toString().padStart(2,'0') else "12"
             val day = mCalendar.get(Calendar.DAY_OF_MONTH).toString().padStart(2,'0')
@@ -237,7 +238,7 @@ class MyWatchFace : CanvasWatchFaceService() {
 
             if (visible) {
                 registerReceiver()
-                /* Update time zone in case it changed while we weren"t visible. */
+                /* Update time zone in case it changed while we weren't visible. */
                 mCalendar.timeZone = TimeZone.getDefault()
                 invalidate()
             } else {
@@ -254,7 +255,7 @@ class MyWatchFace : CanvasWatchFaceService() {
             }
             mRegisteredTimeZoneReceiver = true
             val filter = IntentFilter(Intent.ACTION_TIMEZONE_CHANGED)
-            this@MyWatchFace.registerReceiver(mTimeZoneReceiver, filter)
+            this@PotentialDivider.registerReceiver(mTimeZoneReceiver, filter)
         }
 
         private fun unregisterReceiver() {
@@ -262,12 +263,10 @@ class MyWatchFace : CanvasWatchFaceService() {
                 return
             }
             mRegisteredTimeZoneReceiver = false
-            this@MyWatchFace.unregisterReceiver(mTimeZoneReceiver)
+            this@PotentialDivider.unregisterReceiver(mTimeZoneReceiver)
         }
 
-        /**
-         * Starts/stops the [.mUpdateTimeHandler] timer based on the state of the watch face.
-         */
+//        Starts/stops the [.mUpdateTimeHandler] timer based on the state of the watch face.
         private fun updateTimer() {
             mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME)
             if (shouldTimerBeRunning()) {
@@ -275,17 +274,15 @@ class MyWatchFace : CanvasWatchFaceService() {
             }
         }
 
-        /**
-         * Returns whether the [.mUpdateTimeHandler] timer should be running. The timer
-         * should only run in active mode.
-         */
+
+//        Returns whether the [.mUpdateTimeHandler] timer should be running. The timer
+//        should only run in active mode.
+
         private fun shouldTimerBeRunning(): Boolean {
             return isVisible && !mAmbient
         }
 
-        /**
-         * Handle updating the time periodically in interactive mode.
-         */
+//        Handle updating the time periodically in interactive mode.
         fun handleUpdateTimeMessage() {
             invalidate()
             if (shouldTimerBeRunning()) {

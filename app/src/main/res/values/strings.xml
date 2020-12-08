@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">potential_divider</string>
-    <string name="message">Watch face tapped</string>
-    <string name="my_analog_name">My Analog</string>
+    <string name="message">Vout=Z2/(Z1+Z2)*Vin</string>
+    <string name="watchface_name">Potential Divider</string>
 </resources>
