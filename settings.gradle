@@ -1,2 +1,2 @@
-include ':app'
+include ':wear'
 rootProject.name = "potential_divider"

@@ -6,24 +6,20 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Resources
 import android.graphics.*
-import android.graphics.drawable.AnimationDrawable
+import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
-import androidx.palette.graphics.Palette
 import android.support.wearable.watchface.CanvasWatchFaceService
 import android.support.wearable.watchface.WatchFaceService
 import android.support.wearable.watchface.WatchFaceStyle
 import android.view.SurfaceHolder
 import android.widget.Toast
-
 import java.lang.ref.WeakReference
-import java.util.Calendar
-import java.util.TimeZone
+import java.util.*
 
 /**
- * Updates rate in milliseconds for interactive mode. We update once a second to advance the
- * second hand.
+ * Updates rate in milliseconds for interactive mode.
  */
 private const val INTERACTIVE_UPDATE_RATE_MS = 1000
 
@@ -105,6 +101,7 @@ class PotentialDivider : CanvasWatchFaceService() {
                 color = Color.WHITE
                 textSize = scale*14F
                 textAlign = Paint.Align.CENTER
+                typeface = Typeface.SANS_SERIF
                 isAntiAlias = true
                 strokeCap = Paint.Cap.ROUND
             }
@@ -125,6 +122,7 @@ class PotentialDivider : CanvasWatchFaceService() {
 
         override fun onTimeTick() {
             super.onTimeTick()
+
             invalidate()
         }
 
@@ -132,22 +130,32 @@ class PotentialDivider : CanvasWatchFaceService() {
             super.onAmbientModeChanged(inAmbientMode)
             mAmbient = inAmbientMode
 
-            updateWatchHandStyle()
+            updateWatchStyle()
 
             // Check and trigger whether or not timer should be running (only
             // in active mode).
             updateTimer()
+
+            //TODO charging animation?
+            val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
+                registerReceiver(null, ifilter)
+            }
+            val status: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
+            val isCharging: Boolean = status == BatteryManager.BATTERY_STATUS_CHARGING
+                    || status == BatteryManager.BATTERY_STATUS_FULL
         }
 
-        private fun updateWatchHandStyle() {
+        private fun updateWatchStyle() {
             if (mAmbient) {
-                mTextPaint.color = Color.GRAY
-                mTextPaint.typeface = Typeface.MONOSPACE
+                mTextPaint.color = Color.WHITE
                 mTextPaint.isAntiAlias = false
+                mBackgroundPaint.alpha = 100
+                mTextPaint.alpha = 100
             } else {
                 mTextPaint.color = Color.WHITE
-                mTextPaint.typeface = Typeface.MONOSPACE
                 mTextPaint.isAntiAlias = true
+                mBackgroundPaint.alpha = 255
+                mTextPaint.alpha = 255
             }
         }
 
@@ -159,6 +167,7 @@ class PotentialDivider : CanvasWatchFaceService() {
             if (mMuteMode != inMuteMode) {
                 mMuteMode = inMuteMode
                 mTextPaint.alpha = if (inMuteMode) 100 else 255
+                mBackgroundPaint.alpha = if (inMuteMode) 100 else 255
                 invalidate()
             }
         }
@@ -172,6 +181,9 @@ class PotentialDivider : CanvasWatchFaceService() {
             mBackgroundBitmap = Bitmap.createScaledBitmap(mBackgroundBitmap,
                     (mBackgroundBitmap.width * scale).toInt(),
                     (mBackgroundBitmap.height * scale).toInt(), true)
+            if (!mBurnInProtection && !mLowBitAmbient) {
+                initGrayBackgroundBitmap()
+            }
         }
 
         /**
@@ -195,18 +207,34 @@ class PotentialDivider : CanvasWatchFaceService() {
             invalidate()
         }
 
+        private fun initGrayBackgroundBitmap() {
+            mGrayBackgroundBitmap = Bitmap.createBitmap(
+                    mBackgroundBitmap.width,
+                    mBackgroundBitmap.height,
+                    Bitmap.Config.ARGB_8888
+            )
+            val canvas = Canvas(mGrayBackgroundBitmap)
+            val grayPaint = Paint()
+            val colorMatrix = ColorMatrix()
+            colorMatrix.setSaturation(0f)
+            val filter = ColorMatrixColorFilter(colorMatrix)
+            grayPaint.colorFilter = filter
+            canvas.drawBitmap(mBackgroundBitmap, 0f, 0f, grayPaint)
+        }
+
         override fun onDraw(canvas: Canvas, bounds: Rect) {
             val now = System.currentTimeMillis()
             mCalendar.timeInMillis = now
 
+            canvas.drawColor(Color.BLACK)
             drawBackground(canvas)
             drawDigital(canvas)
         }
 
         private fun drawBackground(canvas: Canvas) {
 
-            if (mAmbient && (mLowBitAmbient || mBurnInProtection)) {
-                canvas.drawColor(Color.BLACK)
+            if (mAmbient && mBurnInProtection) {
+                canvas.drawBitmap(mGrayBackgroundBitmap, 0f, 0f, mBackgroundPaint)
             } else if (mAmbient) {
                 canvas.drawBitmap(mGrayBackgroundBitmap, 0f, 0f, mBackgroundPaint)
             } else {
@@ -219,18 +247,16 @@ class PotentialDivider : CanvasWatchFaceService() {
             val screenHeight = Resources.getSystem().displayMetrics.heightPixels
 
 //            val seconds = mCalendar.get(Calendar.SECOND) + mCalendar.get(Calendar.MILLISECOND) / 1000f    2560 pixel perimeter
-            val minutes = mCalendar.get(Calendar.MINUTE).toString().padStart(2,'0')
-            val hours = if(mCalendar.get(Calendar.HOUR)!=0) mCalendar.get(Calendar.HOUR).toString().padStart(2,'0') else "12"
-            val day = mCalendar.get(Calendar.DAY_OF_MONTH).toString().padStart(2,'0')
+            val minutes = mCalendar.get(Calendar.MINUTE).toString().padStart(2, '0')
+            val hours = if(mCalendar.get(Calendar.HOUR)!=0) mCalendar.get(Calendar.HOUR).toString().padStart(2, '0') else "12"
+            val day = mCalendar.get(Calendar.DAY_OF_MONTH).toString().padStart(2, '0')
             val vOut = minutes.toDouble()/(hours+minutes).toDouble()*day.toDouble()
 
             //Designed with absolute positioning on 320x320 screen, scaled based on device
-            canvas.drawText("$hours Ω", (screenWidth*155/320).toFloat(), (screenHeight*120/320).toFloat(),mTextPaint)
-            canvas.drawText("$minutes Ω", (screenWidth*155/320).toFloat(), (screenHeight*215/320).toFloat(),mTextPaint)
-            canvas.drawText("$day V", (screenWidth*100/320).toFloat(), (screenHeight*162.5/320).toFloat(),mTextPaint)
-            canvas.drawText(String.format("%.2f",vOut)+" V", (screenWidth*240/320).toFloat(), (screenHeight*150/320).toFloat(),mTextPaint)
-
-            //TODO Ambient?
+            canvas.drawText("$hours Ω", (screenWidth * 155 / 320).toFloat(), (screenHeight * 120 / 320).toFloat(), mTextPaint)
+            canvas.drawText("$minutes Ω", (screenWidth * 155 / 320).toFloat(), (screenHeight * 215 / 320).toFloat(), mTextPaint)
+            canvas.drawText("$day V", (screenWidth * 100 / 320).toFloat(), (screenHeight * 162.5 / 320).toFloat(), mTextPaint)
+            canvas.drawText(String.format("%.2f", vOut) + " V", (screenWidth * 240 / 320).toFloat(), (screenHeight * 150 / 320).toFloat(), mTextPaint)
         }
 
         override fun onVisibilityChanged(visible: Boolean) {
@@ -277,7 +303,6 @@ class PotentialDivider : CanvasWatchFaceService() {
 
 //        Returns whether the [.mUpdateTimeHandler] timer should be running. The timer
 //        should only run in active mode.
-
         private fun shouldTimerBeRunning(): Boolean {
             return isVisible && !mAmbient
         }
