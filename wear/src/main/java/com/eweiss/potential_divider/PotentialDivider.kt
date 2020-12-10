@@ -18,6 +18,7 @@ import android.widget.Toast
 import java.lang.ref.WeakReference
 import java.util.*
 
+
 /**
  * Updates rate in milliseconds for interactive mode.
  */
@@ -132,18 +133,18 @@ class PotentialDivider : CanvasWatchFaceService() {
 
             updateWatchStyle()
 
-            // Check and trigger whether or not timer should be running (only
-            // in active mode).
+            // Check and trigger whether or not timer should be running (only in active mode).
             updateTimer()
-
-            //TODO charging animation?
-            val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
-                registerReceiver(null, ifilter)
-            }
-            val status: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
-            val isCharging: Boolean = status == BatteryManager.BATTERY_STATUS_CHARGING
-                    || status == BatteryManager.BATTERY_STATUS_FULL
         }
+
+//        fun checkCharging() {
+//            //TODO charging animation?
+//            val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
+//                registerReceiver(null, ifilter)
+//            }
+//            val status: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
+//            val isCharging: Boolean = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
+//        }
 
         private fun updateWatchStyle() {
             if (mAmbient) {
@@ -198,11 +199,11 @@ class PotentialDivider : CanvasWatchFaceService() {
                 WatchFaceService.TAP_TYPE_TOUCH_CANCEL -> {
                     // The user has started a different gesture or otherwise cancelled the tap.
                 }
-                WatchFaceService.TAP_TYPE_TAP ->
+                WatchFaceService.TAP_TYPE_TAP -> {
                     // The user has completed the tap gesture.
                     // TODO: Add code to handle the tap gesture.
-                    Toast.makeText(applicationContext, R.string.message, Toast.LENGTH_SHORT)
-                            .show()
+//                    Toast.makeText(applicationContext, R.string.message, Toast.LENGTH_SHORT).show()
+                }
             }
             invalidate()
         }
@@ -234,11 +235,11 @@ class PotentialDivider : CanvasWatchFaceService() {
         private fun drawBackground(canvas: Canvas) {
 
             if (mAmbient && mBurnInProtection) {
-                canvas.drawBitmap(mGrayBackgroundBitmap, 0f, 0f, mBackgroundPaint)
+                canvas.drawBitmap(mGrayBackgroundBitmap, 25f, 0f, mBackgroundPaint)
             } else if (mAmbient) {
-                canvas.drawBitmap(mGrayBackgroundBitmap, 0f, 0f, mBackgroundPaint)
+                canvas.drawBitmap(mGrayBackgroundBitmap, 25f, 0f, mBackgroundPaint)
             } else {
-                canvas.drawBitmap(mBackgroundBitmap, 0f, 0f, mBackgroundPaint)
+                canvas.drawBitmap(mBackgroundBitmap, 25f, 0f, mBackgroundPaint)
             }
         }
 
@@ -253,10 +254,10 @@ class PotentialDivider : CanvasWatchFaceService() {
             val vOut = minutes.toDouble()/(hours+minutes).toDouble()*day.toDouble()
 
             //Designed with absolute positioning on 320x320 screen, scaled based on device
-            canvas.drawText("$hours Ω", (screenWidth * 155 / 320).toFloat(), (screenHeight * 120 / 320).toFloat(), mTextPaint)
-            canvas.drawText("$minutes Ω", (screenWidth * 155 / 320).toFloat(), (screenHeight * 215 / 320).toFloat(), mTextPaint)
-            canvas.drawText("$day V", (screenWidth * 100 / 320).toFloat(), (screenHeight * 162.5 / 320).toFloat(), mTextPaint)
-            canvas.drawText(String.format("%.2f", vOut) + " V", (screenWidth * 240 / 320).toFloat(), (screenHeight * 150 / 320).toFloat(), mTextPaint)
+            canvas.drawText("$hours Ω", (screenWidth * 175 / 320).toFloat(), (screenHeight * 120 / 320).toFloat(), mTextPaint)
+            canvas.drawText("$minutes Ω", (screenWidth * 175 / 320).toFloat(), (screenHeight * 215 / 320).toFloat(), mTextPaint)
+            canvas.drawText("$day V", (screenWidth * 120 / 320).toFloat(), (screenHeight * 162.5 / 320).toFloat(), mTextPaint)
+            canvas.drawText(String.format("%.2f", vOut) + " V", (screenWidth * 260 / 320).toFloat(), (screenHeight * 150 / 320).toFloat(), mTextPaint)
         }
 
         override fun onVisibilityChanged(visible: Boolean) {
