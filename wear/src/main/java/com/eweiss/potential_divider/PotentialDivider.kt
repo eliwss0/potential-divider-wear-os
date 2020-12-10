@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Resources
 import android.graphics.*
+import android.text.format.DateFormat
 import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Handler
@@ -249,7 +250,10 @@ class PotentialDivider : CanvasWatchFaceService() {
 
 //            val seconds = mCalendar.get(Calendar.SECOND) + mCalendar.get(Calendar.MILLISECOND) / 1000f    2560 pixel perimeter
             val minutes = mCalendar.get(Calendar.MINUTE).toString().padStart(2, '0')
-            val hours = if(mCalendar.get(Calendar.HOUR)!=0) mCalendar.get(Calendar.HOUR).toString().padStart(2, '0') else "12"
+            val hours = if(!DateFormat.is24HourFormat(applicationContext) && mCalendar.get(Calendar.HOUR)==0)
+                            "12"
+                        else
+                            mCalendar.get(Calendar.HOUR).toString().padStart(2, '0')
             val day = mCalendar.get(Calendar.DAY_OF_MONTH).toString().padStart(2, '0')
             val vOut = minutes.toDouble()/(hours+minutes).toDouble()*day.toDouble()
 
